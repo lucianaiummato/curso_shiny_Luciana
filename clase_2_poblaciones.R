@@ -157,5 +157,75 @@ server <- function(input, output, session) {
 }
 
 # mostramos la aplicación en el servidor local
-shinyApp(ui, server)
+#shinyApp(ui, server)
 
+
+#POBLACIONES POR DEPARTAMENTO
+instalar = function (libreria) {
+  if (libreria %in% installed.packages()[,"Package"]) {
+    eval(parse(text=paste0("library(",libreria,")")))} else {
+      install.packages(libreria)    
+      eval(parse(text=paste0("library(",libreria,")")))
+      library(libreria)
+    }
+}
+
+instalar("dplyr")
+instalar("glue")
+instalar("foreign")
+instalar("stringr")
+
+url = "https://www.indec.gob.ar/ftp/cuadros/territorio/codgeo/Codgeo_Pais_x_dpto_con_datos.zip"
+download.file(url, destfile = "mapa_deptos.zip")
+
+unzip("mapa_deptos.zip",exdir = "mapa_deptos")
+unlink("mapa_deptos.zip")
+
+nombres_archivos = list.files("mapa_deptos")
+nombre_dbf = nombres_archivos[grep("dbf",nombres_archivos)]
+codigos = foreign::read.dbf(glue("mapa_deptos/{nombre_dbf}"))
+
+codigos = data.frame(
+  juri_codigo = substring(codigos$link,1,2),
+  juri_nombre = codigos$provincia,
+  departamento_codigo = substring(codigos$link,3,5),
+  departamento_nombre = codigos$departamen) %>% arrange (juri_codigo,departamento_codigo)
+head(codigos)
+
+codigos$departamento_nombre = str_replace_all(codigos$departamento_nombre, "Comuna ","")
+codigos$juri_nombre = as.character(codigos$juri_nombre)
+codigos$juri_nombre[codigos$juri_nombre=="Tierra del Fuego"] = "Tierra del Fuego, Antártida e Islas del Atlántico Sur"
+codigos$departamento_nombre[codigos$departamento_nombre=="Ñorquinco"] = "Ñorquincó"
+
+instalar("rvest")
+url = 'https://untref.edu.ar/'
+pagina_web = read_html(url)
+links = pagina_web %>% html_nodes("a") %>% html_attr("href") 
+links = links[substring(links,1,4)== "http" & is.na(links)==F] 
+head(links)
+
+instalar("webdriver")
+
+#install_phantomjs() # sólo correr esta línea la primera vez que se use webdriver
+pjs <- run_phantomjs()
+ses <- Session$new(port = pjs$port)
+
+# inicia una sesión el navegador virtual
+ses$go("https://www.indec.gob.ar/indec/web/Nivel4-Tema-2-24-119")
+Sys.sleep(5)
+
+# obtiene el código fuente de la página web
+codigo_html=ses$getSource()
+
+# aplica funciones de procesamiento de texto para "limpiar" los links
+links = strsplit(codigo_html,"\n")[[1]][grep("ftp",strsplit(codigo_html,"\n")[[1]])]
+links = unlist(strsplit(links,"<"))[substring(unlist(strsplit(links,"<")),1,7)=="a class"]
+links = unlist(strsplit(links,"/"))[substring(unlist(strsplit(links,"/")),1,4)=="proy"]
+links1 = unlist(strsplit(links," "))[substring(unlist(strsplit(links," ")),1,4)=="proy"]
+links1 = paste0("https://www.indec.gob.ar/ftp/cuadros/poblacion/",stringr::str_remove_all(links1,'\"'))
+links = unlist(strsplit(links,">"))[substring(unlist(strsplit(links,">")),1,4)!="proy"]
+links = gsub("\\s+$", "", links)
+
+# genera un data frame con los links al archivo de cada jurisdicción
+links = data.frame(juri = links, links=links1)
+head(links)
