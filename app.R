@@ -8,6 +8,7 @@ library(clipr)
 library(bslib)
 library(dplyr)
 library(readxl)
+library(rclipboard)
 
 #archivos
 
@@ -19,6 +20,7 @@ datosSexoEdad <- read_excel("TABLERO_MORTALIDAD.xlsx", sheet = "sexo_edad")
 ui <- fluidPage(
   # titulo
   useShinyjs(),
+  rclipboardSetup(),
   fluidRow(
     column(width = 12,
            h1(strong("Título de la aplicación")),
@@ -44,10 +46,8 @@ ui <- fluidPage(
              "boton",
              "Ver filas"
            ),
-           actionButton(
-             "clip",
-             "Copiar datos"
-           ),
+           uiOutput(
+             "clip"),
            checkboxInput(
              inputId =  "mostrar_grafico",
              label =   "Mostrar/ocultar gráfico",
@@ -83,6 +83,20 @@ server <- function(input, output, session) {
   #CAUSASeleccionada = input$selectCAUSA
   # datos = datos[datos$CAUSA == CAUSASeleccionada,]
   # datos
+  
+  output$clip = renderUI({
+    copiar = datosProcesados() %>% as.data.frame()
+    paste(input$clipbtn)
+    tagList(
+      rclipButton(
+        inputId="clipbtn",
+        label="Copiar", 
+        clipText= copiar, 
+        icon=icon("clipboard"))
+    )
+    
+  })
+  
   datosProcesados = reactive({
     
     filter(datos,CAUSA %in% input$selectCAUSA)
