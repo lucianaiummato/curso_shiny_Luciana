@@ -1,0 +1,13 @@
+name: prueba1
+title: prueba1
+username: 2omfo8-luciana-iummato
+account: 2omfo8-luciana-iummato
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 9713111
+bundleId: 7627796
+url: https://2omfo8-luciana-iummato.shinyapps.io/prueba1/
+version: 1
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: clase_2_poblaciones.R|clase_2_respiratorias.R|clase_3_tasas_mortalidad.R|clase_4_shiny.R|curso_shiny-main/README.md|curso_shiny-main.zip|datos/informacion-publica-respiratorias-nacional-hasta-20180626.csv|datos/informacion-publica-respiratorias-nacional-hasta-20220905.xlsx|datos/informacion-publica-respiratorias-nacional-hasta-20230706.xlsx|datos/vigilancia-de-infecciones-respiratorias-agudas-20181228.csv|datos/vigilancia-respiratorias-agudas-2018-hasta-20200106.csv|poblacion.xls|proyecciones.xlsx|prueba.R|prueba3.R|pruebo2.R|README.md

@@ -4,7 +4,11 @@ library(tidyr)
 library(DT)
 library(lubridate)
 library(shinyWidgets)
+library(highcharter) 
+library(glue)
 library(highcharter)
+library(shinyjs)
+library(clipr)
 
 #descargo el dataset 
 
@@ -64,36 +68,36 @@ DT::datatable(bd)
 input <-
   c("CABA", "Buenos Aires", "Cordoba", "Entre Rios", "Neuquen")
 # filto mi dataset segun este vector de provincias seleccionadas
-bd <- bd %>% filter(prov %in% input)
+#bd <- bd %>% filter(prov %in% input)
 
 # listo los niveles que la variables prov
 niveles_prov <- unique(bd$prov)
 
 # armo el grafico con highchart
-hc <- highchart() %>%
-  hc_chart(type = "line") %>%
-  hc_title(text = "Serie de tiempo de TMI por 1000 nacidos vivos, Argentina, periodo 1990-2021") %>%
-  hc_xAxis(title = list(text = "Año")) %>%
-  hc_yAxis(title = list(text = "TMI ")) %>%
-  hc_exporting(enabled = TRUE) # enable exporting option
+#hc <- highchart() %>%
+  #hc_chart(type = "line") %>%
+  #hc_title(text = "Serie de tiempo de TMI por 1000 nacidos vivos, Argentina, periodo 1990-2021") %>%
+  #hc_xAxis(title = list(text = "Año")) %>%
+ #hc_yAxis(title = list(text = "TMI ")) %>%
+  #hc_exporting(enabled = TRUE) # enable exporting option
 
 
 # Agrega una serie de datos para cada nivel de "prov"
-for (nivel in niveles_prov) {
-  data_serie <- bd[bd$prov == nivel,]
-  hc <- hc %>%
-    hc_add_series(
-      data_serie,
-      "line",
-      hcaes(x = ano, y = TMI),
-      name = nivel,
-      marker = list(radius = 4)
-    )
-}
+#for (nivel in niveles_prov) {
+ # data_serie <- bd[bd$prov == nivel,]
+ # hc <- hc %>%
+  #  hc_add_series(
+  #    data_serie,
+   #   "line",
+    #  hcaes(x = ano, y = TMI),
+    #  name = nivel,
+    #  marker = list(radius = 4)
+ #   )
+#}
 
 ## imprimo el grafico
 #print(hc)
-hc
+#hc
 
 # Defino UI para mi aplicación
 ui <- fluidPage(
@@ -104,17 +108,17 @@ ui <- fluidPage(
   ),
   fluidRow(
    column(12,
-         h2("Filtro"),
+         h2("Provincia"),
          selectInput(
            inputId = "provinciaSeleccionada",
-           label = "Seleccionar provincia",
+           label = "Seleccionar",
            choices = unique(bd$prov),
            selected = "Buenos Aires"),
          align="center")
   ),
   fluidRow(
     column(12,
-         h2("Gráfico"),
+         h2("Serie de tiempo de TMI por 1000 nacidos vivos, Argentina, periodo 1990-2021"),
          highchartOutput("grafico"),
          align="center")
 )
@@ -124,9 +128,11 @@ ui <- fluidPage(
 server <- function(input, output) {
   
   output$grafico= renderHighchart({
-    
+    bd <- bd %>% filter(prov %in% input$provinciaSeleccionada)
     hchart(bd,"line",
-           hcaes(x = ano, y = TMI, group = prov))
+           hcaes(x = ano, y = TMI, group = prov)) %>%
+    hc_xAxis(title = list(text = "Año")) %>%
+      hc_yAxis(title = list(text = "TMI ")) 
     
      })
   

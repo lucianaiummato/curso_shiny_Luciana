@@ -5,9 +5,16 @@ library(glue)
 library(highcharter)
 library(shinyjs)
 library(clipr)
+library(bslib)
+library(dplyr)
+library(readxl)
 
-datos = iris
-datos$Species = toupper(datos$Species)
+#archivos
+
+datos <- read_excel("TABLERO_MORTALIDAD.xlsx")
+datosSexoEdad <- read_excel("TABLERO_MORTALIDAD.xlsx", sheet = "sexo_edad")
+
+
 
 ui <- fluidPage(
   # titulo
@@ -27,10 +34,11 @@ ui <- fluidPage(
            
            h2("Filtros"),
            selectInput(
-             inputId = "selectSpecie",
-             label = "Seleccioar especie:",
-             choices = unique(datos$Species),
-             selected = "VERSICOLOR"
+             inputId = "selectCAUSA",
+             label = "Seleccionar causas:",
+             choices = unique(datos$CAUSA),
+           #  multiple = TRUE,
+             selected = "ECNT"
            ),
            actionButton(
              "boton",
@@ -40,11 +48,11 @@ ui <- fluidPage(
              "clip",
              "Copiar datos"
            ),
-          checkboxInput(
-           inputId =  "mostrar_boxplot",
-          label =   "Mostrar/ocultar boxplot",
-          value = TRUE
-          ),
+           checkboxInput(
+             inputId =  "mostrar_grafico",
+             label =   "Mostrar/ocultar gráfico",
+             value = TRUE
+           ),
            align = "center"
     ),
     column(width = 9,
@@ -52,7 +60,7 @@ ui <- fluidPage(
            hr(),
            DT::DTOutput("tabla"),
            br(),
-           highchartOutput("boxplot"),
+           highchartOutput("grafico"),
            textOutput("muestra_mensaje"),
            align = "center"
     )
@@ -61,22 +69,25 @@ ui <- fluidPage(
 )
 
 server <- function(input, output, session) {
-  observeEvent(input$mostrar_boxplot, {
-    if (input$mostrar_boxplot == T) {
-      show("boxplot")
+  observeEvent(input$mostrar_grafico, {
+    if (input$mostrar_grafico == T) {
+      show("grafico")
     } else {
-      hide("boxplot")
+      hide("grafico")
     }
   })
-  observeEvent(input$mostrar_boxplot,{
-    clipr::write_clip(datosProcesados())
+  
+  # observeEvent(input$mostrar_grafico,{
+  #   clipr::write_clip(datosProcesados(), allow_non_interactive = TRUE)
+  # })
+  #CAUSASeleccionada = input$selectCAUSA
+  # datos = datos[datos$CAUSA == CAUSASeleccionada,]
+  # datos
+  datosProcesados = reactive({
+    
+    filter(datos,CAUSA %in% input$selectCAUSA)
   })
   
-  datosProcesados = reactive({
-    especieSeleccionada = input$selectSpecie
-    datos = datos[datos$Species == especieSeleccionada,]
-    datos
-  })
   
   mensaje = eventReactive(input$boton,{
     filas = nrow(datosProcesados())
@@ -90,45 +101,41 @@ server <- function(input, output, session) {
   output$tabla = DT::renderDataTable({
     
     datos = datosProcesados()
-    DT::datatable(datos, caption = paste0("Especie seleccionada: ", input$selectSpecie))
+    DT::datatable(datos, caption = paste0("Causa seleccionada: ", input$selectCAUSA))
+    
+  })
+ # browser()
+  #reactive para filtrar la base
+  datosSexoEdad_r <- reactive({
+    filter(datosSexoEdad,CAUSA %in% input$selectCAUSA)
+    
+  })
+  output$grafico <- renderHighchart({
+  #  browser()
+    # armo el grafico con highchart
+    hc <- highchart() %>%
+      hc_chart(type = "line") %>%
+      hc_title(text = "xxxx") %>%
+      hc_xAxis(title = list(text = "Grupo de edad")) %>%
+      hc_yAxis(title = list(text = "Tasa ")) %>% 
+      hc_credits(
+        enabled = TRUE, text = "xxx", href = "xxx", style = list(fontSize = "12px")
+      ) %>% 
+      hc_exporting(enabled = TRUE) # enable exporting option
+    datosSexoEdad <- datosSexoEdad_r() 
+    opciones_causas <- unique(datosSexoEdad$CAUSA) 
+    # Agrega una serie de datos para cada nivel de "prov"
+    for (i in opciones_causas) {
+      data_serie <- datosSexoEdad[datosSexoEdad$CAUSA == i, ]  
+      hc <- hc %>%
+        hc_add_series(data_serie, "line", hcaes(x = GRUPO_EDAD, y = Tasa_varones), name = i,
+                      marker = list(radius = 4))
+    }
+    print(hc)
     
   })
   
-  output$boxplot = renderHighchart({
-    #browser()
-    
-    # bloque repetido
-    datos = datosProcesados()
-    
-    datos = datos %>% pivot_longer(cols = 1:4, values_to = "Valores", names_to = "Medidas")
-    datos$Species = NULL
-    
-    datos$Medidas = factor(datos$Medidas)
-    datos = datos %>% as_tibble()
-    
-    # grafico
-    data_boxplot=data_to_boxplot(
-      data = datos,
-      variable = Valores,
-      group_var = Medidas,
-      group_var2 = Medidas,
-      add_outliers = F,
-      fillColor = c('#a6611a','#dfc27d','#80cdc1','#018571'),
-      color="black"
-    )
-    
-    highchart()%>%
-      hc_xAxis(type ="category")%>%
-      hc_add_series_list(data_boxplot)%>%
-      hc_xAxis(title = list(text = "Medida"))%>%
-      hc_yAxis(title = list(text = "Centímetros"))%>%
-      hc_title(text= glue("Boxplot para medidas de <em>{input$selectSpecie}</em>")) %>%
-      hc_subtitle(text= "Medidas de pétalo y sépalo") %>%
-      hc_legend(enabled= FALSE)
-  })
-  
-  
-  
-}
+  }
+
 
 shinyApp(ui, server)

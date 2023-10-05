@@ -1,0 +1,13 @@
+name: curso_shiny_Luciana
+title: curso_shiny_Luciana
+username: 2omfo8-luciana-iummato
+account: 2omfo8-luciana-iummato
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 10100240
+bundleId: 7767716
+url: https://2omfo8-luciana-iummato.shinyapps.io/curso_shiny_Luciana/
+version: 1
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: clase 5 y 6.R|clase_2_poblaciones.R|clase_2_respiratorias.R|clase_3_tasas_mortalidad.R|clase_4_shiny.R|clase_6.R|curso_shiny-main/README.md|curso_shiny-main.zip|datos/informacion-publica-respiratorias-nacional-hasta-20180626.csv|datos/informacion-publica-respiratorias-nacional-hasta-20220905.xlsx|datos/informacion-publica-respiratorias-nacional-hasta-20230706.xlsx|datos/vigilancia-de-infecciones-respiratorias-agudas-20181228.csv|datos/vigilancia-respiratorias-agudas-2018-hasta-20200106.csv|ejemploShiny_velu.R|poblacion.xls|proyecciones.xlsx|prueba.R|prueba3.R|pruebo2.R|qnr-vepx-bhr (2023-09-06 18_12 GMT-3).mp4|qnr-vepx-bhr (2023-09-06 20_07 GMT-3).mp4|README.md|mapa_deptos
