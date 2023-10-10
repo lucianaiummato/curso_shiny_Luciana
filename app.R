@@ -27,6 +27,7 @@ ui <- fluidPage(
   fluidRow(
     column(width = 12,
            h1(strong("Mortalidad por ECNT")),
+           h2(strong("Datos ficticios/borrador")),
            align = "center"
     )
   ),
