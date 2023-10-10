@@ -145,7 +145,7 @@ server <- function(input, output, session) {
     # armo el grafico con highchart
     hc <- highchart() %>%
       hc_chart(type = "line") %>%
-      hc_title(text = "Tasa de mortalidad ajustada por edad cada 100.000 hab. según grupos de edad. Argentina, 2021") %>%
+      hc_title(text = "Tasa de mortalidad c/ 100.000 hab. según grupos de edad. Argentina, 2021") %>%
       hc_xAxis(title = list(text = "Grupo de edad")) %>%
       hc_yAxis(title = list(text = "Tasa ")) %>% 
       hc_xAxis(categories = datosSexoEdad$GRUPO_EDAD)%>% 
