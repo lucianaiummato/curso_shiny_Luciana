@@ -14,16 +14,19 @@ library(rclipboard)
 
 datos <- read_excel("TABLERO_MORTALIDAD.xlsx")
 datosSexoEdad <- read_excel("TABLERO_MORTALIDAD.xlsx", sheet = "sexo_edad")
-
-
+datos <-rename(datos, "TBM VARONES" = TBM_VARONES, "TAE VARONES" = TAE_VARONES, "TBM MUJERES" = TBM_MUJERES, "TAE MUJERES" = TAE_MUJERES )
+datos <-datos %>% mutate_if(is.numeric, round, digits=2) 
+datosSexoEdad <-datosSexoEdad %>% mutate_if(is.numeric, round, digits=2) 
+tema_untref = bs_theme(bootswatch = "cerulean")
 
 ui <- fluidPage(
   # titulo
   useShinyjs(),
+  theme = tema_untref,
   rclipboardSetup(),
   fluidRow(
     column(width = 12,
-           h1(strong("Título de la aplicación")),
+           h1(strong("Mortalidad por ECNT")),
            align = "center"
     )
   ),
@@ -34,20 +37,23 @@ ui <- fluidPage(
   fluidRow(
     column(width = 3,
            
-           h2("Filtros"),
+           h3("Filtro"),
            selectInput(
              inputId = "selectCAUSA",
-             label = "Seleccionar causas:",
+             label = "Seleccionar causas de muerte:",
              choices = unique(datos$CAUSA),
            #  multiple = TRUE,
              selected = "ECNT"
            ),
-           actionButton(
-             "boton",
-             "Ver filas"
-           ),
+           
            uiOutput(
              "clip"),
+           br(),
+           downloadButton(
+             "descargar",
+             "Descargar"
+           ),
+           
            checkboxInput(
              inputId =  "mostrar_grafico",
              label =   "Mostrar/ocultar gráfico",
@@ -56,7 +62,7 @@ ui <- fluidPage(
            align = "center"
     ),
     column(width = 9,
-           h2("Título 2 de la col 2"),
+           h4("Tabla. Tasas de mortalidad cada 100.000 hab. Argentina, año 2021"),
            hr(),
            DT::DTOutput("tabla"),
            br(),
@@ -77,6 +83,16 @@ server <- function(input, output, session) {
     }
   })
   
+  observeEvent(input$mostrar_grafico, {
+    
+    if (input$mostrar_grafico == T) {
+      show("grafico", anim = T, animType = "fade")
+    } else {
+      hide("grafico", anim = T, animType = "flip")
+    }
+    
+  })
+  
   # observeEvent(input$mostrar_grafico,{
   #   clipr::write_clip(datosProcesados(), allow_non_interactive = TRUE)
   # })
@@ -90,27 +106,27 @@ server <- function(input, output, session) {
     tagList(
       rclipButton(
         inputId="clipbtn",
-        label="Copiar", 
+        label="Copiar datos", 
         clipText= copiar, 
         icon=icon("clipboard"))
     )
     
   })
-  
+  #reactive para filtrar la base1
   datosProcesados = reactive({
     
     filter(datos,CAUSA %in% input$selectCAUSA)
   })
   
   
-  mensaje = eventReactive(input$boton,{
-    filas = nrow(datosProcesados())
-    glue("cantidad de filas {filas} ")
-  })
+  # mensaje = eventReactive(input$boton,{
+  #   filas = nrow(datosProcesados())
+  #   glue("cantidad de filas {filas} ")
+  # })
   
-  output$muestra_mensaje = renderText({
-    mensaje()
-  })
+  # output$muestra_mensaje = renderText({
+  #   mensaje()
+  # })
   
   output$tabla = DT::renderDataTable({
     
@@ -119,7 +135,7 @@ server <- function(input, output, session) {
     
   })
  # browser()
-  #reactive para filtrar la base
+  #reactive para filtrar la base2
   datosSexoEdad_r <- reactive({
     filter(datosSexoEdad,CAUSA %in% input$selectCAUSA)
     
@@ -129,11 +145,12 @@ server <- function(input, output, session) {
     # armo el grafico con highchart
     hc <- highchart() %>%
       hc_chart(type = "line") %>%
-      hc_title(text = "xxxx") %>%
+      hc_title(text = "Tasa de mortalidad ajustada por edad cada 100.000 hab. según grupos de edad. Argentina, 2021") %>%
       hc_xAxis(title = list(text = "Grupo de edad")) %>%
       hc_yAxis(title = list(text = "Tasa ")) %>% 
+      hc_xAxis(categories = datosSexoEdad$GRUPO_EDAD)%>% 
       hc_credits(
-        enabled = TRUE, text = "xxx", href = "xxx", style = list(fontSize = "12px")
+        enabled = TRUE, text = "Fuente: DEIS. Ministerio de Salud de la Nación", href = "DEIS Ministerio de Salud de la Nación", style = list(fontSize = "12px")
       ) %>% 
       hc_exporting(enabled = TRUE) # enable exporting option
     datosSexoEdad <- datosSexoEdad_r() 
@@ -148,6 +165,24 @@ server <- function(input, output, session) {
     print(hc)
     
   })
+  
+  output$descargar = downloadHandler(
+    
+    # nombre del archivo a descargar
+    
+    filename = function() {
+      paste('data-', Sys.Date(), '.csv', sep='')
+    },
+    content = function(file) {
+      
+      # procesamiento de los datos para descargar
+      datosParaDescargar = datosProcesados()
+      datosParaDescargar = datosParaDescargar 
+      
+      # descarga de los datos
+      write.csv(datosParaDescargar, file, row.names = F)
+    }
+  )
   
   }
 
